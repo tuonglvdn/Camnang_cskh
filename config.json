@@ -1,0 +1,26 @@
+{
+  "llm": {
+    "enabled": false,
+    "base_url": "http://localhost:11434/v1",
+    "model": "qwen2.5:7b-instruct",
+    "api_key": "",
+    "temperature": 0.1,
+    "timeout_sec": 120
+  },
+  "top_k": 6,
+  "abbreviations": {
+    "hdmbd": "hop dong mua ban dien",
+    "kh": "khach hang",
+    "mkh": "ma khach hang",
+    "dl": "dien luc",
+    "cskh": "cham soc khach hang",
+    "dtv": "dien thoai vien",
+    "dmt": "dien mat troi",
+    "dmtam": "dien mat troi mai nha",
+    "ct": "cong to",
+    "tba": "tram bien ap",
+    "hd": "hoa don",
+    "sh": "sinh hoat",
+    "kd": "kinh doanh"
+  }
+}
