@@ -120,7 +120,8 @@ for n, m in enumerate(chat):
                 if r["mp3"]:
                     st.audio(r["mp3"], format="audio/mpeg", autoplay=m.pop("tts_new", False))
                 elif r["spoken"]:
-                    st.caption("Máy chủ chưa gọi được dịch vụ giọng đọc - dùng giọng của trình duyệt.")
-                    components.html(html_giong_trinh_duyet(r["spoken"], toc_do), height=44)
+                    st.caption("Máy chủ chưa gọi được dịch vụ giọng đọc HoaiMy, dùng giọng của trình duyệt. "
+                               f"Lý do: {r['loi'][:160]}")
+                    components.html(html_giong_trinh_duyet(r["spoken"], toc_do), height=125)
                 else:
                     st.caption(r["loi"])

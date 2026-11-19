@@ -268,11 +268,23 @@ def tao_giong_doc(answer_md, toc_do="Vừa"):
         data = asyncio.run(asyncio.wait_for(_edge(spoken, cfg, rate), timeout=cfg["timeout_sec"]))
         engine = "edge"
     except Exception as e:
-        errors.append(f"Edge TTS: {type(e).__name__} {str(e)[:120]}")
+        msg = f"{type(e).__name__} {e}"
+        if isinstance(e, ModuleNotFoundError):
+            why = "chưa cài thư viện edge-tts (chạy: python -m pip install edge-tts)"
+        elif "Application Control" in msg or "DLL load failed" in msg:
+            why = "Windows chặn thư viện aiohttp của edge-tts (cần CNTT cho phép)"
+        elif any(k in msg for k in ("DNS", "Cannot connect", "Timeout", "TimeoutError", "getaddrinfo")):
+            why = "máy chủ không kết nối được Internet tới speech.platform.bing.com"
+        elif "403" in msg:
+            why = "dịch vụ từ chối (403): cập nhật edge-tts (pip install -U edge-tts) và đồng bộ giờ máy"
+        else:
+            why = msg[:120]
+        errors.append(f"Edge TTS: {why}")
         try:
             data, engine = _azure(spoken, cfg, rate), "azure"
         except Exception as e2:
-            errors.append(f"Azure: {str(e2)[:120]}")
+            if "Chưa bật Azure" not in str(e2):
+                errors.append(f"Azure: {str(e2)[:120]}")
             return {**out, "loi": " | ".join(errors)}
     tmp = path.with_suffix(".part")
     tmp.write_bytes(data)
@@ -281,20 +293,44 @@ def tao_giong_doc(answer_md, toc_do="Vừa"):
 
 
 def html_giong_trinh_duyet(spoken, toc_do="Vừa"):
-    """Cách A: trình duyệt tự đọc (speechSynthesis) văn bản đã chuẩn hoá."""
+    """Cách A: trình duyệt tự đọc (speechSynthesis) văn bản đã chuẩn hoá.
+    Chỉ đọc khi trình duyệt có giọng tiếng Việt: Edge có sẵn giọng online (HoaiMy, NamMinh);
+    Chrome dùng giọng của Windows -> cần cài giọng tiếng Việt cho Windows."""
     rate = {"Chậm": 0.85, "Vừa": 1.0, "Nhanh": 1.15}.get(toc_do, 1.0)
-    return """<!DOCTYPE html><html><body style="margin:0;font-family:'Source Sans Pro',system-ui,sans-serif;font-size:14px">
-<button id="b" style="font:inherit;font-weight:600;padding:.35rem .8rem;border-radius:6px;border:1px solid #ccc;cursor:pointer">▶ Đọc bằng giọng máy tính</button>
-<button id="s" style="font:inherit;padding:.35rem .8rem;border-radius:6px;border:1px solid #ccc;cursor:pointer">■ Dừng</button>
-<span id="m" style="margin-left:.5rem;color:#777"></span>
+    return """<!DOCTYPE html><html><body style="margin:0;font-family:'Source Sans Pro',system-ui,sans-serif;font-size:14px;color:#31333F">
+<button id="b" style="font:inherit;font-weight:600;padding:.35rem .8rem;border-radius:6px;border:1px solid #ccc;background:#fff;cursor:pointer">▶ Đọc bằng giọng máy tính</button>
+<button id="s" style="font:inherit;padding:.35rem .8rem;border-radius:6px;border:1px solid #ccc;background:#fff;cursor:pointer">■ Dừng</button>
+<div id="m" style="margin-top:.35rem;color:#6b6f7b;font-size:13px"></div>
 <script>
 var T=%s, R=%s, m=document.getElementById('m');
-function voice(){ var v=speechSynthesis.getVoices(); return v.find(function(x){return /^vi/i.test(x.lang);}); }
+function post(h){ window.parent.postMessage({isStreamlitMessage:true,type:"streamlit:setFrameHeight",height:h},"*"); }
+function fit(){ post(document.documentElement.scrollHeight); }
+function getVoices(cb){
+  var v=speechSynthesis.getVoices(); if(v.length){ cb(v); return; }
+  var done=false; speechSynthesis.onvoiceschanged=function(){ if(!done){ done=true; cb(speechSynthesis.getVoices()); } };
+  setTimeout(function(){ if(!done){ done=true; cb(speechSynthesis.getVoices()); } }, 1500);
+}
+function pick(vs){
+  var vi=vs.filter(function(x){ return /^vi([-_]|$)/i.test(x.lang); });
+  return vi.find(function(x){ return /natural|online|hoaimy|namminh/i.test(x.name); }) || vi[0] || null;
+}
+function sentences(t){ return t.match(/[^.!?;:]+[.!?;:]*/g) || [t]; }
 document.getElementById('b').onclick=function(){
-  if(!window.speechSynthesis){ m.textContent='Trình duyệt không hỗ trợ đọc.'; return; }
-  speechSynthesis.cancel(); var u=new SpeechSynthesisUtterance(T); u.lang='vi-VN'; u.rate=R;
-  var v=voice(); if(v){u.voice=v;} else { m.textContent='Máy chưa có giọng tiếng Việt (cài gói tiếng Việt trong Windows).'; }
-  speechSynthesis.speak(u);
+  if(!window.speechSynthesis){ m.textContent='Trình duyệt này không hỗ trợ đọc văn bản.'; fit(); return; }
+  speechSynthesis.cancel(); m.textContent='Đang tìm giọng tiếng Việt…';
+  getVoices(function(vs){
+    var v=pick(vs);
+    if(!v){
+      m.innerHTML='Máy này chưa có giọng đọc tiếng Việt nên không đọc được.<br>'
+        + 'Cách 1: mở chương trình bằng trình duyệt <b>Microsoft Edge</b> (có sẵn giọng HoaiMy).<br>'
+        + 'Cách 2: cài giọng cho Windows: Cài đặt → Thời gian và ngôn ngữ → Giọng nói → Thêm giọng nói → Tiếng Việt, rồi mở lại trình duyệt.';
+      fit(); return;
+    }
+    m.textContent='Đang đọc bằng giọng: '+v.name; fit();
+    sentences(T).forEach(function(p){ p=p.trim(); if(!p) return;
+      var u=new SpeechSynthesisUtterance(p); u.voice=v; u.lang=v.lang; u.rate=R; speechSynthesis.speak(u); });
+  });
 };
-document.getElementById('s').onclick=function(){ if(window.speechSynthesis) speechSynthesis.cancel(); };
+document.getElementById('s').onclick=function(){ if(window.speechSynthesis) speechSynthesis.cancel(); m.textContent=''; fit(); };
+fit();
 </script></body></html>""" % (json.dumps(spoken, ensure_ascii=False), rate)
