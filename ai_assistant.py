@@ -31,6 +31,13 @@ DEFAULT_CONFIG = {
         "timeout_sec": 120,
     },
     "top_k": 6,
+    # Đọc câu trả lời (TTS): Edge TTS giọng HoaiMy, dự phòng Azure (cần key), cuối cùng là giọng trình duyệt
+    "tts": {
+        "enabled": True,
+        "voice": "vi-VN-HoaiMyNeural",
+        "max_chars": 900,
+        "azure": {"enabled": False, "key": "", "region": "southeastasia", "voice": "vi-VN-HoaiMyNeural"},
+    },
     # Từ viết tắt ngành điện - giống mục "abbreviations" của TTS_Doc_v2
     "abbreviations": {
         "hdmbd": "hop dong mua ban dien", "kh": "khach hang", "mkh": "ma khach hang",

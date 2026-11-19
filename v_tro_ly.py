@@ -7,14 +7,15 @@ import streamlit as st
 
 from ai_assistant import BM25, build_corpus, ask_llm, load_config
 from giong_noi import giong_noi
+import streamlit.components.v1 as components
+from doc_tra_loi import html_giong_trinh_duyet, tao_giong_doc
 from auth import current_user
 from common import page_header
 from db import execute, query_one
 
 user = current_user()
 cfg = load_config()
-page_header("🤖 Trợ lý tra cứu nghiệp vụ",
-            "Hỏi như đang hỏi đồng nghiệp. Câu trả lời lấy từ ngân hàng tình huống, hỏi-đáp, kiến thức và văn bản còn hiệu lực.")
+page_header("🤖 Trợ lý tra cứu nghiệp vụ")
 
 
 @st.cache_resource(ttl=300, show_spinner="Đang nạp chỉ mục tài liệu...")
@@ -32,6 +33,7 @@ index = get_index(stamp)
 with st.sidebar:
     st.caption(f"Chỉ mục: {len(index.docs)} đoạn tài liệu")
     st.caption("LLM: " + (f"✅ {cfg['llm']['model']}" if cfg["llm"]["enabled"] else "⏸️ chưa bật (chỉ tìm kiếm)"))
+    toc_do = st.select_slider("🔊 Tốc độ đọc", ["Chậm", "Vừa", "Nhanh"], value="Vừa", key="toc_do")
     if st.button("Xoá hội thoại"):
         st.session_state["chat"] = []
         st.rerun()
@@ -78,8 +80,12 @@ def tra_loi(q):
 
 
 # ---- Ô hỏi đặt ở TRÊN CÙNG; câu hỏi - trả lời mới nhất hiện ngay bên dưới ----
-q = giong_noi("o_hoi_tro_ly",
-              placeholder="Gõ câu hỏi hoặc bấm 🎤 để nói, VD: Khách thuê nhà muốn tính giá điện theo định mức cần giấy tờ gì?")
+q = giong_noi(
+    "o_hoi_tro_ly",
+    placeholder="Hỏi như hỏi đồng nghiệp: gõ hoặc bấm 🎤 để nói…",
+    ghi_chu="VD: Khách thuê nhà cần giấy tờ gì để tính giá điện theo định mức? · Trả lời từ ngân hàng tình huống, "
+            "hỏi-đáp, kiến thức và văn bản còn hiệu lực · Enter để gửi",
+)
 
 if q:
     with st.spinner("Đang tra cứu..."):
@@ -99,7 +105,22 @@ for n, m in enumerate(chat):
             st.markdown(m["a"])
             if m.get("passages"):
                 show_sources(m["passages"])
-            fb = st.feedback("thumbs", key=f"fb_{m['log_id']}")
+            c_fb, c_tts, _ = st.columns([1.3, 1.6, 6], vertical_alignment="center")
+            with c_fb:
+                fb = st.feedback("thumbs", key=f"fb_{m['log_id']}")
             if fb is not None and m.get("fb") != fb:
                 m["fb"] = fb
                 execute("UPDATE tl_nhat_ky SET danh_gia=? WHERE id=?", (1 if fb == 1 else -1, m["log_id"]))
+            if c_tts.button("🔊 Nghe", key=f"tts_{m['log_id']}", help="Đọc câu trả lời bằng giọng nói"):
+                with st.spinner("Đang tạo giọng đọc..."):
+                    m["tts"] = tao_giong_doc(m["a"], toc_do)
+                m["tts_new"] = True
+            r = m.get("tts")
+            if r:
+                if r["mp3"]:
+                    st.audio(r["mp3"], format="audio/mpeg", autoplay=m.pop("tts_new", False))
+                elif r["spoken"]:
+                    st.caption("Máy chủ chưa gọi được dịch vụ giọng đọc - dùng giọng của trình duyệt.")
+                    components.html(html_giong_trinh_duyet(r["spoken"], toc_do), height=44)
+                else:
+                    st.caption(r["loi"])
