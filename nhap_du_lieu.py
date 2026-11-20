@@ -51,17 +51,20 @@ COLS = {
         "hieu_luc_tu": ["hieu_luc_tu"], "hieu_luc_den": ["hieu_luc_den"], "quan_he": ["quan_he"],
         "so_hieu_goc": ["so_hieu_van_ban_goc", "van_ban_goc"], "link_wiki": ["link", "link_wiki"],
         "noi_dung": ["noi_dung_tom_tat", "noi_dung"],
+        "ma": ["ma", "ma_so", "ma_muc"], "nguon_vi_tri": ["vi_tri_nguon", "vi_tri"],
     },
     "kien_thuc": {
         "tieu_de": ["tieu_de"], "nghiep_vu": ["nghiep_vu"], "ap_dung": ["don_vi_ap_dung", "ap_dung"],
         "noi_dung": ["noi_dung", "noi_dung_markdown"], "so_hieu": ["so_hieu_van_ban", "so_hieu"],
         "hieu_luc_tu": ["hieu_luc_tu"], "hieu_luc_den": ["hieu_luc_den"],
+        "ma": ["ma", "ma_so", "ma_muc"], "nguon_vi_tri": ["vi_tri_nguon", "vi_tri"],
     },
     "tinh_huong": {
         "cau_hoi": ["cau_hoi", "tinh_huong"], "tu_goi_y": ["tu_goi_y", "tu_khoa"], "nghiep_vu": ["nghiep_vu"],
         "tra_loi": ["cau_tra_loi", "tra_loi"], "nguon_tai_lieu": ["nguon_tai_lieu"],
         "so_hieu": ["so_hieu_van_ban", "so_hieu"], "link_wiki": ["link_wiki"], "hieu_luc_tu": ["hieu_luc_tu"],
         "hieu_luc_den": ["hieu_luc_den"], "nguon": ["nguon_tinh_huong", "nguon"], "video_link": ["link_video"],
+        "ma": ["ma", "ma_so", "ma_muc"], "nguon_vi_tri": ["vi_tri_nguon", "vi_tri"],
     },
 }
 REQUIRED = {"van_ban": ["so_hieu", "ten"], "kien_thuc": ["tieu_de", "noi_dung"], "tinh_huong": ["cau_hoi"]}
@@ -147,11 +150,12 @@ def import_data(data, user_id=None, dry_run=False):
                 notes.append(f"Văn bản {r['so_hieu']}: chưa có văn bản gốc '{r.get('so_hieu_goc')}', bỏ qua quan hệ.")
                 qh = ""
             c.execute("""INSERT INTO van_ban(so_hieu, ten, cap, ap_dung, nghiep_vu, ngay_ban_hanh, hieu_luc_tu,
-                         hieu_luc_den, quan_he, van_ban_goc_id, noi_dung, link_wiki, created_by)
-                         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                         hieu_luc_den, quan_he, van_ban_goc_id, noi_dung, link_wiki, created_by, ma, nguon_vi_tri)
+                         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                       (r["so_hieu"], r["ten"], r.get("cap", ""), r.get("ap_dung") or "Tất cả", r.get("nghiep_vu", ""),
                        r.get("ngay_ban_hanh"), r.get("hieu_luc_tu"), r.get("hieu_luc_den"), qh, goc,
-                       r.get("noi_dung", ""), r.get("link_wiki", ""), user_id))
+                       r.get("noi_dung", ""), r.get("link_wiki", ""), user_id, r.get("ma") or None,
+                       r.get("nguon_vi_tri", "")))
             stats["van_ban"]["them"] += 1
             if qh == "thay_the" and goc and r.get("hieu_luc_tu"):
                 den = (date.fromisoformat(r["hieu_luc_tu"]) - timedelta(days=1)).isoformat()
@@ -171,9 +175,10 @@ def import_data(data, user_id=None, dry_run=False):
                 stats["kien_thuc"]["bo_qua"] += 1
                 continue
             c.execute("""INSERT INTO kt_bai(tieu_de, nghiep_vu, ap_dung, noi_dung, van_ban_id, hieu_luc_tu,
-                         hieu_luc_den, created_by) VALUES (?,?,?,?,?,?,?,?)""",
+                         hieu_luc_den, created_by, ma, nguon_vi_tri) VALUES (?,?,?,?,?,?,?,?,?,?)""",
                       (r["tieu_de"], r.get("nghiep_vu", ""), r.get("ap_dung") or "Tất cả", r["noi_dung"],
-                       vb_id(r.get("so_hieu")), r.get("hieu_luc_tu"), r.get("hieu_luc_den"), user_id))
+                       vb_id(r.get("so_hieu")), r.get("hieu_luc_tu"), r.get("hieu_luc_den"), user_id,
+                       r.get("ma") or None, r.get("nguon_vi_tri", "")))
             stats["kien_thuc"]["them"] += 1
 
         # 3. Tình huống
@@ -182,12 +187,12 @@ def import_data(data, user_id=None, dry_run=False):
                 stats["tinh_huong"]["bo_qua"] += 1
                 continue
             c.execute("""INSERT INTO nh_tinh_huong(cau_hoi, tu_goi_y, nghiep_vu, tra_loi, nguon_tai_lieu, van_ban_id,
-                         link_wiki, video_link, nguon, hieu_luc_tu, hieu_luc_den, created_by)
-                         VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
+                         link_wiki, video_link, nguon, hieu_luc_tu, hieu_luc_den, created_by, ma, nguon_vi_tri)
+                         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                       (r["cau_hoi"], r.get("tu_goi_y", ""), r.get("nghiep_vu", ""), r.get("tra_loi", ""),
                        r.get("nguon_tai_lieu", ""), vb_id(r.get("so_hieu")), r.get("link_wiki", ""),
                        r.get("video_link", ""), r.get("nguon", ""), r.get("hieu_luc_tu"), r.get("hieu_luc_den"),
-                       user_id))
+                       user_id, r.get("ma") or None, r.get("nguon_vi_tri", "")))
             stats["tinh_huong"]["them"] += 1
 
         if dry_run:
@@ -198,12 +203,12 @@ def import_data(data, user_id=None, dry_run=False):
 def template_workbook():
     """File mẫu 3 sheet."""
     sheets = {
-        "VanBan": ["Số hiệu", "Tên văn bản", "Cấp ban hành", "Đơn vị áp dụng", "Nghiệp vụ", "Ngày ban hành",
-                   "Hiệu lực từ", "Hiệu lực đến", "Quan hệ", "Số hiệu văn bản gốc", "Link", "Nội dung tóm tắt"],
-        "KienThuc": ["Tiêu đề", "Nghiệp vụ", "Đơn vị áp dụng", "Nội dung", "Số hiệu văn bản", "Hiệu lực từ",
-                     "Hiệu lực đến"],
-        "TinhHuong": ["Câu hỏi", "Từ gợi ý", "Nghiệp vụ", "Câu trả lời", "Nguồn tài liệu", "Số hiệu văn bản",
-                      "Link wiki", "Hiệu lực từ", "Hiệu lực đến", "Nguồn tình huống", "Link video"],
+        "VanBan": ["Mã", "Số hiệu", "Tên văn bản", "Cấp ban hành", "Đơn vị áp dụng", "Nghiệp vụ", "Ngày ban hành",
+                   "Hiệu lực từ", "Hiệu lực đến", "Quan hệ", "Số hiệu văn bản gốc", "Link", "Nội dung tóm tắt", "Vị trí nguồn"],
+        "KienThuc": ["Mã", "Tiêu đề", "Nghiệp vụ", "Đơn vị áp dụng", "Nội dung", "Số hiệu văn bản", "Hiệu lực từ",
+                     "Hiệu lực đến", "Vị trí nguồn"],
+        "TinhHuong": ["Mã", "Câu hỏi", "Từ gợi ý", "Nghiệp vụ", "Câu trả lời", "Nguồn tài liệu", "Số hiệu văn bản",
+                      "Link wiki", "Hiệu lực từ", "Hiệu lực đến", "Nguồn tình huống", "Link video", "Vị trí nguồn"],
     }
     wb = openpyxl.Workbook()
     wb.remove(wb.active)
@@ -211,7 +216,7 @@ def template_workbook():
         ws = wb.create_sheet(name)
         ws.append(cols)
         for i in range(len(cols)):
-            ws.column_dimensions[chr(65 + i)].width = 22
+            ws.column_dimensions[openpyxl.utils.get_column_letter(i + 1)].width = 22
     buf = io.BytesIO()
     wb.save(buf)
     return buf.getvalue()

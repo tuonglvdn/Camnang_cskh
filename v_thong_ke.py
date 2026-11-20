@@ -49,7 +49,7 @@ with t1:
     if df.empty:
         st.info("Không có dữ liệu trong khoảng thời gian này.")
     else:
-        st.dataframe(df, hide_index=True, use_container_width=True)
+        st.dataframe(df, hide_index=True, width="stretch")
         excel_button(df, "phan_hoi_tinh_huong", "x1")
 
 with t2:
@@ -62,7 +62,7 @@ with t2:
                  rng * 3)
     df = pd.DataFrame(rows)
     if not df.empty:
-        ev = st.dataframe(df.drop(columns="id"), hide_index=True, use_container_width=True,
+        ev = st.dataframe(df.drop(columns="id"), hide_index=True, width="stretch",
                           on_select="rerun", selection_mode="single-row", key="tk_tt")
         excel_button(df.drop(columns="id"), "tuong_tac_user", "x2")
         if ev.selection.rows:
@@ -79,7 +79,7 @@ with t2:
                 WHERE EXISTS (SELECT 1 FROM hd_like l WHERE l.bai_id=b.id AND l.user_id=? AND l.created_at>=? AND l.created_at<?)
                    OR c.id IS NOT NULL
                 ORDER BY b.id""", (u["id"], *rng, u["id"], *rng, u["id"], *rng))
-            st.dataframe(pd.DataFrame(detail), hide_index=True, use_container_width=True)
+            st.dataframe(pd.DataFrame(detail), hide_index=True, width="stretch")
         else:
             st.caption("Chọn một dòng để xem chi tiết.")
 
@@ -97,7 +97,7 @@ with t3:
     if df.empty:
         st.info("Chưa có đề xuất trong khoảng thời gian này.")
     else:
-        ev = st.dataframe(df.drop(columns="id"), hide_index=True, use_container_width=True,
+        ev = st.dataframe(df.drop(columns="id"), hide_index=True, width="stretch",
                           on_select="rerun", selection_mode="single-row", key="tk_dx")
         excel_button(df.drop(columns="id"), "de_xuat_user", "x3")
         if ev.selection.rows:
@@ -113,7 +113,7 @@ with t3:
                            (u["id"], *rng))
             for d in detail:
                 d["Ngày gửi"] = fmt_dt(d["Ngày gửi"])
-            st.dataframe(pd.DataFrame(detail), hide_index=True, use_container_width=True)
+            st.dataframe(pd.DataFrame(detail), hide_index=True, width="stretch")
 
 with t4:
     st.caption(f"Cách tính: câu hỏi hay {DIEM['cau_hoi_hay']}đ · trả lời chuẩn {DIEM['tl_chuan']}đ · "
@@ -133,7 +133,7 @@ with t4:
                                             "td": "Tương đối chuẩn", "blh": "Bình luận hay"})
     if not df.empty:
         df = df.sort_values("Điểm", ascending=False)
-        st.dataframe(df, hide_index=True, use_container_width=True,
+        st.dataframe(df, hide_index=True, width="stretch",
                      column_config={"Điểm": st.column_config.ProgressColumn(
                          "Điểm", min_value=0, max_value=max(1, int(df["Điểm"].max())), format="%d")})
         excel_button(df, "diem_thi_dua", "x4")
@@ -148,5 +148,5 @@ with t5:
     if df.empty:
         st.info("Chưa có câu hỏi.")
     else:
-        st.dataframe(df, hide_index=True, use_container_width=True)
+        st.dataframe(df, hide_index=True, width="stretch")
         excel_button(df, "cau_hoi_tro_ly", "x5")

@@ -203,6 +203,26 @@ CREATE TABLE IF NOT EXISTS phien (
     created_at TEXT DEFAULT (datetime('now', 'localtime'))
 );
 
+-- Đợt cập nhật dữ liệu có đối chiếu + lịch sử từng bản ghi (để hoàn tác)
+CREATE TABLE IF NOT EXISTS dot_cap_nhat (
+    id         INTEGER PRIMARY KEY,
+    ten_file   TEXT,
+    bo_du_lieu TEXT,
+    tom_tat    TEXT,
+    nguoi      INTEGER REFERENCES users(id),
+    hoan_tac   INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now', 'localtime'))
+);
+CREATE TABLE IF NOT EXISTS lich_su (
+    id         INTEGER PRIMARY KEY,
+    dot_id     INTEGER REFERENCES dot_cap_nhat(id),
+    bang       TEXT NOT NULL,
+    ban_ghi_id INTEGER NOT NULL,
+    thao_tac   TEXT NOT NULL,        -- them | sua | ra_soat | het_hieu_luc
+    du_lieu_cu TEXT,                  -- JSON bản ghi trước khi đổi
+    created_at TEXT DEFAULT (datetime('now', 'localtime'))
+);
+
 CREATE INDEX IF NOT EXISTS ix_bl_bai ON hd_binh_luan(bai_id);
 CREATE INDEX IF NOT EXISTS ix_like_bai ON hd_like(bai_id);
 CREATE INDEX IF NOT EXISTS ix_tbn_user ON thong_bao_nhan(user_id, da_doc_luc);
@@ -284,10 +304,23 @@ def execute(sql, params=()):
         return cur.lastrowid
 
 
+MIGRATIONS = {  # cột thêm sau, tự bổ sung cho CSDL cũ
+    "van_ban": ["ma TEXT", "nguon_file TEXT", "nguon_vi_tri TEXT", "updated_at TEXT"],
+    "kt_bai": ["ma TEXT", "nguon_file TEXT", "nguon_vi_tri TEXT"],
+    "nh_tinh_huong": ["ma TEXT", "nguon_file TEXT", "nguon_vi_tri TEXT"],
+}
+
+
 def init_db():
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
     with connect() as c:
         c.executescript(SCHEMA)
+        for tbl, cols in MIGRATIONS.items():
+            have = {r[1] for r in c.execute(f"PRAGMA table_info({tbl})")}
+            for col in cols:
+                if col.split()[0] not in have:
+                    c.execute(f"ALTER TABLE {tbl} ADD COLUMN {col}")
+            c.execute(f"CREATE UNIQUE INDEX IF NOT EXISTS ux_{tbl}_ma ON {tbl}(ma) WHERE ma IS NOT NULL")
         if not c.execute("SELECT 1 FROM danh_muc LIMIT 1").fetchone():
             c.executemany("INSERT INTO danh_muc(loai, ten, thu_tu) VALUES ('nghiep_vu', ?, ?)",
                           [(t, i) for i, t in enumerate(DEFAULT_NGHIEP_VU)])

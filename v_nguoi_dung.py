@@ -20,7 +20,7 @@ with t_user:
     df = pd.DataFrame(users)
     df["active"] = df["active"].astype(bool)
     edited = st.data_editor(
-        df, hide_index=True, use_container_width=True, key="user_editor", disabled=["id", "username"],
+        df, hide_index=True, width="stretch", key="user_editor", disabled=["id", "username"],
         column_config={
             "id": None, "username": "Tên đăng nhập", "full_name": "Họ tên",
             "role": st.column_config.SelectboxColumn("Vai trò", options=role_keys, required=True),
@@ -44,7 +44,7 @@ with t_user:
     opts = {u["id"]: f"{u['full_name']} ({u['username']})" for u in users}
     uid = c1.selectbox("Người dùng", list(opts), format_func=opts.get)
     pw = c2.text_input("Mật khẩu mới", type="password")
-    if c3.button("Đặt lại", use_container_width=True) and len(pw) >= 6:
+    if c3.button("Đặt lại", width="stretch") and len(pw) >= 6:
         execute("UPDATE users SET password_hash=? WHERE id=?", (hash_password(pw), uid))
         st.success("Đã đặt lại mật khẩu.")
 

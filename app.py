@@ -89,13 +89,13 @@ if role == "quan_ly":
     ]
     pages["Quản trị"] = [
         P("v_nh_soan_thao.py", "Soạn thảo tình huống", "🗂️"),
-        P("v_nhap_du_lieu.py", "Nhập dữ liệu hàng loạt", "📥"),
+        P("v_nhap_du_lieu.py", "Nhập / cập nhật dữ liệu", "📥"),
         P("v_nguoi_dung.py", "Người dùng - danh mục", "👥"),
     ]
 
 with st.sidebar:
     st.markdown(f"**{user['full_name']}**  \n{ROLE_NAMES[role]} · {user.get('don_vi') or ''}")
-    with st.popover("🔑 Đổi mật khẩu", use_container_width=True):
+    with st.popover("🔑 Đổi mật khẩu", width="stretch"):
         with st.form("doi_mk", clear_on_submit=True):
             old = st.text_input("Mật khẩu hiện tại", type="password")
             new = st.text_input("Mật khẩu mới (≥ 6 ký tự)", type="password")
@@ -111,7 +111,7 @@ with st.sidebar:
                     execute("UPDATE users SET password_hash=? WHERE id=?", (hash_password(new), user["id"]))
                     st.session_state["weak_pw"] = new in ("admin123", "123456", "12345678", "password")
                     st.success("Đã đổi mật khẩu.")
-    if st.button("Đăng xuất", use_container_width=True):
+    if st.button("Đăng xuất", width="stretch"):
         logout()
 
 st.navigation(pages).run()

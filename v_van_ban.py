@@ -167,4 +167,4 @@ if manager:
                         LEFT JOIN van_ban v ON v.id=k.van_ban_id WHERE k.can_ra_soat=1""")
         if rows:
             st.dataframe([{"Loại": r["loai"], "Nội dung": r["noi_dung"], "Văn bản nguồn cũ": r["so_hieu"]}
-                          for r in rows], hide_index=True, use_container_width=True)
+                          for r in rows], hide_index=True, width="stretch")

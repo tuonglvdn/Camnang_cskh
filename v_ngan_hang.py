@@ -42,7 +42,7 @@ st.markdown(f"**Kết quả tìm kiếm** ({len(rows)})")
 if rows:
     df = pd.DataFrame([{"Câu hỏi": r["cau_hoi"], "Nghiệp vụ": r["nghiep_vu"], "Hiệu lực": r["hl"],
                         "Thường gặp": r["n_vote"]} for r in rows])
-    ev = st.dataframe(df, hide_index=True, use_container_width=True, on_select="rerun",
+    ev = st.dataframe(df, hide_index=True, width="stretch", on_select="rerun",
                       selection_mode="multi-row", key="nh_table", height=min(420, 38 + 35 * len(rows)),
                       column_config={"Câu hỏi": st.column_config.TextColumn(width="large"),
                                      "Thường gặp": st.column_config.NumberColumn("👍 Thường gặp", width="small")})
@@ -58,7 +58,7 @@ else:
 st.divider()
 h1, h2 = st.columns([4, 1])
 h1.subheader(f"Nội dung chi tiết ({len(basket)})")
-if basket and h2.button("Xoá tất cả", use_container_width=True):
+if basket and h2.button("Xoá tất cả", width="stretch"):
     basket.clear()
     st.rerun()
 if not basket:
@@ -84,6 +84,8 @@ for th_id in list(basket):
             meta.append(f"📑 {t['nguon_tai_lieu']}")
         if t["link_wiki"]:
             meta.append(f"[Văn bản trên wiki]({t['link_wiki']})")
+        if t.get("ma"):
+            meta.append(f"Mã {t['ma']}" + (f" · nguồn {t['nguon_vi_tri']}" if t.get("nguon_vi_tri") else ""))
         if meta:
             st.caption(" · ".join(meta))
         if t["video_link"]:

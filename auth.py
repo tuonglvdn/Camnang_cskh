@@ -97,7 +97,7 @@ def login_page():
     with col, st.form("login"):
         username = st.text_input("Tên đăng nhập")
         password = st.text_input("Mật khẩu", type="password")
-        ok = st.form_submit_button("Đăng nhập", type="primary", use_container_width=True)
+        ok = st.form_submit_button("Đăng nhập", type="primary", width="stretch")
     if ok:
         locked_until = st.session_state.get("lock_until", 0)
         if time.time() < locked_until:

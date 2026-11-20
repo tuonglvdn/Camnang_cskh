@@ -61,8 +61,8 @@ with tab_form:
         het = c10.checkbox("Gắn tag hết hiệu lực", value=bool(draft.get("het_hieu_luc")))
         gui_tb = st.checkbox("Thông báo cho ĐTV và Điện lực", value=not edit_id)
         b1, b2 = st.columns(2)
-        save = b1.form_submit_button("💾 Lưu", type="primary", use_container_width=True)
-        cancel = b2.form_submit_button("Huỷ / soạn mới", use_container_width=True)
+        save = b1.form_submit_button("💾 Lưu", type="primary", width="stretch")
+        cancel = b2.form_submit_button("Huỷ / soạn mới", width="stretch")
 
     if cancel:
         st.session_state.pop("nh_edit_id", None)
@@ -121,23 +121,23 @@ with tab_list:
         df = pd.DataFrame([{"#": r["id"], "Rà soát": "⚠️" if r["can_ra_soat"] else "", "Câu hỏi": r["cau_hoi"],
                             "Nghiệp vụ": r["nghiep_vu"], "Hiệu lực": r["hl"], "Nguồn": r["nguon"],
                             "Cập nhật": fmt_dt(r["updated_at"])} for r in rows])
-        ev = st.dataframe(df, hide_index=True, use_container_width=True, on_select="rerun",
+        ev = st.dataframe(df, hide_index=True, width="stretch", on_select="rerun",
                           selection_mode="single-row", key="nh_l_table")
         if ev.selection.rows:
             r = rows[ev.selection.rows[0]]
             st.markdown(f"**#{r['id']}** {r['cau_hoi']}")
             b1, b2, b3, b4 = st.columns(4)
-            if b1.button("✏️ Sửa", use_container_width=True):
+            if b1.button("✏️ Sửa", width="stretch"):
                 st.session_state["nh_edit_id"] = r["id"]
                 st.rerun()
-            if b2.button("✅ Đã rà soát", use_container_width=True, disabled=not r["can_ra_soat"]):
+            if b2.button("✅ Đã rà soát", width="stretch", disabled=not r["can_ra_soat"]):
                 execute("UPDATE nh_tinh_huong SET can_ra_soat=0 WHERE id=?", (r["id"],))
                 st.rerun()
-            if b3.button("🏷️ Gắn tag hết hiệu lực", use_container_width=True, disabled=r["hl"] == HL_HET):
+            if b3.button("🏷️ Gắn tag hết hiệu lực", width="stretch", disabled=r["hl"] == HL_HET):
                 execute("UPDATE nh_tinh_huong SET het_hieu_luc=1, can_ra_soat=0, updated_at=? WHERE id=?",
                         (now_str(), r["id"]))
                 st.rerun()
-            if b4.button("🗑️ Xoá", use_container_width=True):
+            if b4.button("🗑️ Xoá", width="stretch"):
                 execute("DELETE FROM nh_binh_chon WHERE th_id=?", (r["id"],))
                 execute("DELETE FROM nh_binh_luan WHERE th_id=?", (r["id"],))
                 execute("DELETE FROM nh_tinh_huong WHERE id=?", (r["id"],))
@@ -151,7 +151,7 @@ with tab_excel:
         items, errors = read_excel_rows(up)
         for e in errors:
             st.warning(e)
-        st.dataframe(pd.DataFrame(items), use_container_width=True, hide_index=True)
+        st.dataframe(pd.DataFrame(items), width="stretch", hide_index=True)
         if items and st.button(f"Nhập {len(items)} tình huống", type="primary"):
             with connect() as c:
                 c.executemany("""INSERT INTO nh_tinh_huong(cau_hoi, tu_goi_y, nghiep_vu, tra_loi, nguon_tai_lieu,
@@ -172,7 +172,7 @@ with tab_top:
     if df.empty:
         st.info("Chưa có bình chọn.")
     else:
-        st.dataframe(df, hide_index=True, use_container_width=True)
+        st.dataframe(df, hide_index=True, width="stretch")
         buf = io.BytesIO()
         df.to_excel(buf, index=False)
         st.download_button("⬇️ Xuất Excel cho web CSKH", buf.getvalue(), "tinh_huong_thuong_gap.xlsx")

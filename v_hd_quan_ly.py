@@ -31,8 +31,8 @@ def handle_form(d):
         chuan = c2.checkbox("Câu trả lời chuẩn", value=bool(d["tl_chuan"]), key=f"ch_{d['id']}")
         td = c3.checkbox("Câu trả lời tương đối chuẩn", value=bool(d["tl_tuong_doi"]), key=f"td_{d['id']}")
         b1, b2 = st.columns(2)
-        send = b1.form_submit_button("📤 Gửi phản hồi", type="primary", use_container_width=True)
-        publish = b2.form_submit_button("✍️ Cập nhật chuyên mục hỏi-đáp", use_container_width=True)
+        send = b1.form_submit_button("📤 Gửi phản hồi", type="primary", width="stretch")
+        publish = b2.form_submit_button("✍️ Cập nhật chuyên mục hỏi-đáp", width="stretch")
     if send or publish:
         if chuan and td:
             st.error("Chỉ chọn một trong hai: 'Câu trả lời chuẩn' hoặc 'Tương đối chuẩn'.")
@@ -102,7 +102,7 @@ with tab_bl:
             "Tình huống": r["cau_hoi"][:80], "Nội dung bình luận": r["noi_dung"],
             "Đã đọc": True, "Cộng điểm (bình luận hay)": False} for r in rows])
         edited = st.data_editor(
-            df, hide_index=True, use_container_width=True, key="bl_editor",
+            df, hide_index=True, width="stretch", key="bl_editor",
             disabled=["id", "Thời gian", "Người bình luận", "Tình huống", "Nội dung bình luận"],
             column_config={"id": None, "Nội dung bình luận": st.column_config.TextColumn(width="large")})
         if st.button("💾 Lưu (tick đã đọc & cộng điểm)", type="primary"):

@@ -55,6 +55,8 @@ with tabs[0]:
             meta = [f"Hiệu lực {fmt_dt(k['hieu_luc_tu']) or '...'} → {fmt_dt(k['hieu_luc_den']) or 'nay'}"]
             if k["van_ban_id"]:
                 meta.append(f"📑 {vb_opts.get(k['van_ban_id'], '')}")
+            if k.get("ma"):
+                meta.append(f"Mã {k['ma']}" + (f" · nguồn {k['nguon_vi_tri']}" if k.get("nguon_vi_tri") else ""))
             meta.append(f"Cập nhật {fmt_dt(k['updated_at'])}")
             st.caption(" · ".join(meta))
 
@@ -82,8 +84,8 @@ if manager:
             hl_tu = c4.date_input("Hiệu lực từ", value=from_iso(d.get("hieu_luc_tu")), format="DD/MM/YYYY")
             hl_den = c5.date_input("Hiệu lực đến", value=from_iso(d.get("hieu_luc_den")), format="DD/MM/YYYY")
             b1, b2 = st.columns(2)
-            save = b1.form_submit_button("💾 Lưu", type="primary", use_container_width=True)
-            cancel = b2.form_submit_button("Huỷ / soạn mới", use_container_width=True)
+            save = b1.form_submit_button("💾 Lưu", type="primary", width="stretch")
+            cancel = b2.form_submit_button("Huỷ / soạn mới", width="stretch")
         if cancel:
             st.session_state.pop("kt_edit_id", None)
             st.rerun()
@@ -111,17 +113,17 @@ if manager:
                                 "Nghiệp vụ": r["nghiep_vu"], "Áp dụng": r["ap_dung"],
                                 "Hiệu lực": f"{fmt_dt(r['hieu_luc_tu']) or '...'} → {fmt_dt(r['hieu_luc_den']) or 'nay'}"}
                                for r in rows])
-            ev = st.dataframe(df, hide_index=True, use_container_width=True, on_select="rerun",
+            ev = st.dataframe(df, hide_index=True, width="stretch", on_select="rerun",
                               selection_mode="single-row", key="kt_table")
             if ev.selection.rows:
                 r = rows[ev.selection.rows[0]]
                 b1, b2, b3 = st.columns(3)
-                if b1.button("✏️ Sửa", use_container_width=True):
+                if b1.button("✏️ Sửa", width="stretch"):
                     st.session_state["kt_edit_id"] = r["id"]
                     st.rerun()
-                if b2.button("✅ Đã rà soát", use_container_width=True, disabled=not r["can_ra_soat"]):
+                if b2.button("✅ Đã rà soát", width="stretch", disabled=not r["can_ra_soat"]):
                     execute("UPDATE kt_bai SET can_ra_soat=0 WHERE id=?", (r["id"],))
                     st.rerun()
-                if b3.button("🗑️ Xoá", use_container_width=True):
+                if b3.button("🗑️ Xoá", width="stretch"):
                     execute("DELETE FROM kt_bai WHERE id=?", (r["id"],))
                     st.rerun()
